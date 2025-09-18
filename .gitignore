@@ -34,4 +34,7 @@ _targets/
 *.csv
 *.xlsx
 
+CLAUDE.md
+GEMINI.md
+
 public/assets/material/textures/penguins-skybox-pack
