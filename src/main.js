@@ -309,7 +309,7 @@ async function initScene (setup = (scene, camera, controllers, players) => {}) {
 
         if (data.hasOwnProperty("soundMesh")) {
             soundMesh = data["soundMesh"];
-            soundAnalyzer = await initSoundAnalyzer(await initSound(soundMesh, "assets/audio/the_bardos_beyond_christmas.mp3"));
+            soundAnalyzer = await initSoundAnalyzer(await initSound(soundMesh, "assets/audio/MIXST002-Portal.mp3"));
         }
     });
 
