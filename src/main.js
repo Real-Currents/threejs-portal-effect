@@ -330,6 +330,46 @@ async function initScene (setup = (scene, camera, controllers, players) => {}) {
     // const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 3);
     // scene.add(hemisphereLight);
 
+    function generateFaceGrid(texture, gridColor, gridSpacingPixels) {
+
+        const textureRepeatScale = gridSpacingPixels * gridSpacingPixels;
+        texture.repeat.set(textureRepeatScale, textureRepeatScale);
+        texture.repeat.x = textureRepeatScale;
+        texture.repeat.y = textureRepeatScale;
+        texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+        texture.colorSpace = THREE.SRGBColorSpace;
+
+        const ctx = texture.source.data.getContext('2d');
+
+        ctx.canvas.width = ctx.canvas.height = textureRepeatScale;
+
+        const w = ctx.canvas.width,
+            h = ctx.canvas.height;
+
+        ctx.fillStyle = "transparent";
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+        ctx.strokeStyle = gridColor;
+        ctx.beginPath();
+        for (let x=gridSpacingPixels/2; x<=w; x+=gridSpacingPixels){
+            ctx.save();
+            ctx.translate(0.5, 0);
+            ctx.moveTo(x-0.5,0);      // 0.5 offset so that 1px lines are crisp
+            ctx.lineTo(x-0.5,h);
+            ctx.restore();
+        }
+        for (let y=gridSpacingPixels/2;y<=h;y+=gridSpacingPixels){
+            ctx.save();
+            ctx.translate(0, 0.5);
+            ctx.moveTo(0,y-0.5);
+            ctx.lineTo(w,y-0.5);
+            ctx.restore();
+        }
+        ctx.stroke();
+
+        return ctx;
+    }
+
     function createGround(width, height, groundColor, groundTexture) {
         const geometry = new THREE.PlaneGeometry(width, width, 1, 1);
         const material = (!!groundTexture && groundTexture !== null) ?
@@ -344,7 +384,7 @@ async function initScene (setup = (scene, camera, controllers, players) => {}) {
         const groundMesh = new THREE.Mesh(geometry, material);
         groundMesh.rotation.set(-Math.PI * 0.5, 0, 0);
         groundMesh.position.y = height;
-        return groundMesh
+        return groundMesh;
     }
 
     const skyDomeRadius = 5.01;
@@ -490,9 +530,12 @@ async function initScene (setup = (scene, camera, controllers, players) => {}) {
     //     mesh.rotation.y += 0.01;
     // }
 
+    // generateFaceLabel(textureCanvasCtx, '#F00', '#0FF', '+X');
+    generateFaceGrid(canvasTexture, '#09F', 10.0);
+
     console.log("canvasTexture:", canvasTexture);
 
-    // const groundInsideMesh = createGround(4, 0, mapColors.get("orangeLight"), null);
+    // const groundInsideMesh = createGround(4, 0, mapColors.get("orangeLight"), canvasTexture);
     // setLayer(groundInsideMesh, mapLayers.get("inside"));
     // scene.add(groundInsideMesh);
 
@@ -501,9 +544,9 @@ async function initScene (setup = (scene, camera, controllers, players) => {}) {
     setLayer(skyInsideMesh, mapLayers.get("inside"));
     scene.add(skyInsideMesh);
 
-    // const shelfInsideMesh = createGround(100, 1, mapColors.get("green"), canvasTexture);
-    // setLayer(shelfInsideMesh, mapLayers.get("inside"));
-    // scene.add(shelfInsideMesh);
+    const shelfInsideMesh = createGround(100, 1, mapColors.get("green"), canvasTexture);
+    setLayer(shelfInsideMesh, mapLayers.get("inside"));
+    scene.add(shelfInsideMesh);
 
     const portalRadialBounds = 1.0; // relative to portal size
 
@@ -756,6 +799,17 @@ async function initScene (setup = (scene, camera, controllers, players) => {}) {
 
         if (skyInsideMesh.material.hasOwnProperty("uniforms")) {
             skyInsideMesh.material.uniforms.time.value = timeElapsed; // <= DOES NOT WORK w/ MeshBasicMaterial
+        }
+
+        if (shelfInsideMesh.material.hasOwnProperty("clippingPlanes")) {
+            shelfInsideMesh.material.clippingPlanes = [
+                clippingPlaneOutside,
+                clippingLeftPlane,
+                clippingRightPlane,
+                clippingTopPlane,
+                clippingBottomPlane,
+                // new THREE.Plane(clippingBottomUnitVector.clone(), -0.999)
+            ];
         }
 
         // torusMesh.material.clippingPlanes = [
